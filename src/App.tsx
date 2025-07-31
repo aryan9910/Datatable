@@ -18,7 +18,9 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(0);
-  const rows = 10;
+  const [rows, setRows] = useState(10);
+  const [showSelector, setShowSelector] = useState(false);
+  const [selectCount, setSelectCount] = useState('');
 
   const fetchData = async (pageNumber: number) => {
     setLoading(true);
@@ -80,15 +82,88 @@ const App = () => {
           loading={loading}
           paginator
           rows={rows}
-          totalRecords={totalRecords}
           onPage={onPageChange}
+          totalRecords={totalRecords}
           first={page * rows}
           selection={currentPageSelection}
           onSelectionChange={onSelectionChange}
           selectionMode="checkbox"
           dataKey="id"
+          rowsPerPageOptions={[10, 20, 50]}
+          onRowsChange={(e) => setRows(e.value)}
         >
-          <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} />
+          {/* ✅ Custom header for selection icon + floating form */}
+          <Column
+            selectionMode="multiple"
+            header={() => (
+              <div style={{ position: 'relative' }}>
+                <i
+                  className="pi pi-angle-down"
+                  title="Select rows"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setShowSelector(!showSelector)}
+                />
+
+                {showSelector && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '20px',
+                      left: '-20px',
+                      backgroundColor: 'white',
+                      border: '1px solid gray',
+                      borderRadius: '4px',
+                      padding: '5px',
+                      zIndex: 9999,
+                      width: '120px',
+                    }}
+                  >
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const count = parseInt(selectCount);
+                        if (!isNaN(count) && count > 0) {
+                          const rowsToSelect = artworks.slice(0, count);
+                          const newMap = new Map(selectedMap);
+                          rowsToSelect.forEach((art) => newMap.set(art.id, art));
+                          setSelectedMap(newMap);
+                          setShowSelector(false);
+                          setSelectCount('');
+                        }
+                      }}
+                    >
+                      <input
+                        type="number"
+                        placeholder="Select rows..."
+                        style={{ width: '100%', fontSize: '12px', marginBottom: '4px' }}
+                        min={1}
+                        max={artworks.length}
+                        value={selectCount}
+                        onChange={(e) => setSelectCount(e.target.value)}
+                      />
+                      <button
+                        type="submit"
+                        style={{
+                          fontSize: '11px',
+                          padding: '2px 6px',
+                          width: '100%',
+                          backgroundColor: '#000',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '3px',
+                        }}
+                      >
+                        submit
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
+            )}
+            headerStyle={{ width: '6rem' }}
+            style={{ textAlign: 'center' }}
+          />
+
           <Column field="title" header="Title" />
           <Column field="place_of_origin" header="Place of Origin" />
           <Column field="artist_display" header="Artist" />
