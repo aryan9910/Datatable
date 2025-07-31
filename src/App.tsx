@@ -22,11 +22,11 @@ const App = () => {
   const [showSelector, setShowSelector] = useState(false);
   const [selectCount, setSelectCount] = useState('');
 
-  const fetchData = async (pageNumber: number) => {
+  const fetchData = async (pageNumber: number, pageSize: number) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://api.artic.edu/api/v1/artworks?page=${pageNumber + 1}`
+        `https://api.artic.edu/api/v1/artworks?page=${pageNumber + 1}&limit=${pageSize}`
       );
       const data = await response.json();
       setArtworks(data.data);
@@ -39,23 +39,24 @@ const App = () => {
   };
 
   useEffect(() => {
-    fetchData(page);
-  }, [page]);
+    fetchData(page, rows);
+  }, [page, rows]);
 
-  const onPageChange = (e: any) => {
-    setPage(e.page);
+  const onPageChange = (e: { page?: number; rows?: number }) => {
+    if (e.page !== undefined) setPage(e.page);
+    if (e.rows !== undefined) setRows(e.rows);
   };
 
-  const onSelectionChange = (e: any) => {
-    const newSelected: Artwork[] = e.value;
+  const onSelectionChange = (e: { value: Artwork[] }) => {
+    const newSelected = e.value;
     const newMap = new Map(selectedMap);
 
-    for (let item of newSelected) {
+    for (const item of newSelected) {
       newMap.set(item.id, item);
     }
 
-    for (let row of artworks) {
-      if (!newSelected.some((item: Artwork) => item.id === row.id)) {
+    for (const row of artworks) {
+      if (!newSelected.some((item) => item.id === row.id)) {
         newMap.delete(row.id);
       }
     }
@@ -82,25 +83,24 @@ const App = () => {
           loading={loading}
           paginator
           rows={rows}
-          onPage={onPageChange}
           totalRecords={totalRecords}
           first={page * rows}
+          dataKey="id"
           selection={currentPageSelection}
           onSelectionChange={onSelectionChange}
           selectionMode="checkbox"
-          dataKey="id"
+          onPage={onPageChange}
           rowsPerPageOptions={[10, 20, 50]}
-          onRowsChange={(e) => setRows(e.value)}
         >
-          {/* ✅ Custom header for selection icon + floating form */}
+          {/* Selection Column with Floating Popup */}
           <Column
             selectionMode="multiple"
             header={() => (
-              <div style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
                 <i
                   className="pi pi-angle-down"
                   title="Select rows"
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', marginLeft: '6px' }}
                   onClick={() => setShowSelector(!showSelector)}
                 />
 
@@ -109,7 +109,7 @@ const App = () => {
                     style={{
                       position: 'absolute',
                       top: '20px',
-                      left: '-20px',
+                      left: '0',
                       backgroundColor: 'white',
                       border: '1px solid gray',
                       borderRadius: '4px',
